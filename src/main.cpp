@@ -119,8 +119,13 @@ namespace
 
             try {
                 load_progress::Settings::GetSingleton().Load();
+                auto& trampoline = SKSE::GetTrampoline();
+                logger::info("[Trampoline] Before hooks: {} bytes", trampoline.allocated_size());
                 load_progress::transitions::InstallHooks();
+                logger::info("[Trampoline] After transition hooks: {} bytes", trampoline.allocated_size());
                 load_progress::InstallHooks();
+                logger::info("[Trampoline] Used: {} bytes, capacity: {} bytes, free: {} bytes",
+                    trampoline.allocated_size(), trampoline.capacity(), trampoline.free_size());
             } catch (const std::exception& error) {
                 load_progress::DisablePlugin(error.what());
                 LogCritical("could not install Skyrim Load Progress hooks", error.what());
