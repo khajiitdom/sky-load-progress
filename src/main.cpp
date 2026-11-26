@@ -158,12 +158,12 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 
         logger::info("Skyrim Load Progress {} loading", Version::NAME);
 
-        // Reserve enough room for the six queue-counter stubs, three optional loaded-entry stubs,
-        // and every transition branch island.
-        // The SKSE trampoline is executable storage for generated hook stubs and nearby
-        // branch relays. Reserving it before installing hooks gives those patches a shared
-        // allocation; it is unrelated to the GPU resources used by transition rendering.
-        constexpr std::size_t trampolineSize = 1 << 14;
+        // Test a 2 KiB trampoline reservation based on measured usage of 982 bytes
+        // (42 bytes for transition hooks and 940 bytes for loading-progress hooks).
+        // This leaves 1066 bytes of headroom in the tested configuration, with optional
+        // loaded-entry diagnostics disabled. Other configurations and runtimes may need more.
+        // The trampoline stores executable hook stubs and branch relays, not GPU resources.
+        constexpr std::size_t trampolineSize = 1 << 11;
         SKSE::AllocTrampoline(trampolineSize);
 
         auto* messaging = SKSE::GetMessagingInterface();
