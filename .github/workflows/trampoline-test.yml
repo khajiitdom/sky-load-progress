@@ -1,0 +1,46 @@
+name: Trampoline Test Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - trampoline-test
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout source and dependencies
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup MSVC x64
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Setup vcpkg
+        shell: pwsh
+        run: |
+          $root = $env:VCPKG_INSTALLATION_ROOT
+          if (-not $root -or -not (Test-Path "$root/scripts/buildsystems/vcpkg.cmake")) {
+            throw "vcpkg toolchain not found"
+          }
+          "VCPKG_ROOT=$root" >> $env:GITHUB_ENV
+
+      - name: Configure release
+        run: cmake --preset build-release-msvc
+
+      - name: Build release
+        run: cmake --build --preset release-msvc --verbose
+
+      - name: Upload DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: SkyrimLoadProgress-Trampoline-Test
+          path: build/release-msvc/SkyrimLoadProgress.dll
+          if-no-files-found: error
