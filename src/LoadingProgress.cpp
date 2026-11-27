@@ -789,15 +789,16 @@ namespace load_progress
             });
         }
 
-        // Full CONTEXT stubs are larger than ordinary branch islands, so fail before modifying code
-        // when the shared SKSE trampoline no longer has a conservative amount of working space.
+        // Full CONTEXT stubs are larger than ordinary branch islands, so retain a preflight
+        // capacity check before installing the queue mutation hooks.
         void RequireQueueHookTrampolineSpace()
         {
-            constexpr std::size_t minimumTrampolineBytes = 8 * 1024;
+            constexpr std::size_t minimumTrampolineBytes = 1536;
 
-            // A trampoline is executable memory for the displaced instructions and register-saving
-            // callback stub. The eight-kilobyte threshold is a conservative reserve for this set,
-            // not the five-byte patch length or an exact measurement of one generated stub.
+            // Experimental 2 KiB reservation: the measured configuration used 940 bytes
+            // after the transition hooks, with optional loaded-entry diagnostics disabled.
+            // This 1536-byte threshold is a conservative test budget, not a proven upper
+            // bound for every runtime or configuration. Keep the capacity guard enabled.
             const auto freeBytes = SKSE::GetTrampoline().free_size();
             if (freeBytes < minimumTrampolineBytes) {
                 throw std::runtime_error(fmt::format(
